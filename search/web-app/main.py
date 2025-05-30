@@ -19,26 +19,22 @@ import os
 import re
 from urllib.parse import urlparse
 
-import requests
-from flask import Flask, render_template, request
-from google.api_core.exceptions import ResourceExhausted
-from werkzeug.exceptions import HTTPException
-
 from consts import (
-    CUSTOM_UI_DATASTORE_IDS,
+    CUSTOM_UI_ENGINE_IDS,
     LOCATION,
     PROJECT_ID,
+    SUMMARY_MODELS,
     VALID_LANGUAGES,
     WIDGET_CONFIGS,
-    IMAGE_SEARCH_DATASTORE_IDs,
+    IMAGE_SEARCH_ENGINE_IDs,
     RECOMMENDATIONS_DATASTORE_IDs,
 )
 from ekg_utils import search_public_kg
-from genappbuilder_utils import (
-    list_documents,
-    recommend_personalize,
-    search_enterprise_search,
-)
+from flask import Flask, render_template, request
+from google.api_core.exceptions import ResourceExhausted
+import requests
+from vais_utils import list_documents, recommend_personalize, search_enterprise_search
+from werkzeug.exceptions import HTTPException
 
 app = Flask(__name__)
 
@@ -49,7 +45,7 @@ FORM_OPTIONS = {
     "default_language": VALID_LANGUAGES[0],
 }
 
-CUSTOM_UI_SEARCH_ENGINES = [d["name"] for d in CUSTOM_UI_DATASTORE_IDS]
+CUSTOM_UI_SEARCH_ENGINES = [d["name"] for d in CUSTOM_UI_ENGINE_IDS]
 
 NAV_LINKS = [
     {"link": "/", "name": "Widgets", "icon": "widgets"},
@@ -115,11 +111,12 @@ def search() -> str:
         title=NAV_LINKS[1]["name"],
         nav_links=NAV_LINKS,
         search_engines=CUSTOM_UI_SEARCH_ENGINES,
+        summary_models=SUMMARY_MODELS,
     )
 
 
-@app.route("/search_genappbuilder", methods=["POST"])
-def search_genappbuilder() -> str:
+@app.route("/search_vais", methods=["POST"])
+def search_vais() -> str:
     """
     Handle Search Vertex AI Search Request
     """
@@ -132,6 +129,7 @@ def search_genappbuilder() -> str:
             title=NAV_LINKS[1]["name"],
             nav_links=NAV_LINKS,
             search_engines=CUSTOM_UI_SEARCH_ENGINES,
+            summary_models=SUMMARY_MODELS,
             message_error="No query provided",
         )
 
@@ -143,15 +141,20 @@ def search_genappbuilder() -> str:
             title=NAV_LINKS[1]["name"],
             nav_links=NAV_LINKS,
             search_engines=CUSTOM_UI_SEARCH_ENGINES,
+            summary_models=SUMMARY_MODELS,
             message_error="No search engine selected",
         )
 
-    search_engine_index = int(search_engine)
+    summary_model = request.form.get("summary_model")
+    summary_preamble = request.form.get("summary_preamble")
+
     results, summary, request_url, raw_request, raw_response = search_enterprise_search(
         project_id=PROJECT_ID,
         location=LOCATION,
-        data_store_id=CUSTOM_UI_DATASTORE_IDS[search_engine_index]["datastore_id"],
+        engine_id=CUSTOM_UI_ENGINE_IDS[int(search_engine)]["engine_id"],
         search_query=search_query,
+        summary_model=summary_model,
+        summary_preamble=summary_preamble,
     )
 
     return render_template(
@@ -159,6 +162,7 @@ def search_genappbuilder() -> str:
         title=NAV_LINKS[1]["name"],
         nav_links=NAV_LINKS,
         search_engines=CUSTOM_UI_SEARCH_ENGINES,
+        summary_models=SUMMARY_MODELS,
         message_success=search_query,
         results=results,
         summary=summary,
@@ -180,8 +184,8 @@ def image_search() -> str:
     )
 
 
-@app.route("/imagesearch_genappbuilder", methods=["POST"])
-def imagesearch_genappbuilder() -> str:
+@app.route("/imagesearch_vais", methods=["POST"])
+def imagesearch_vais() -> str:
     """
     Handle Image Search Vertex AI Search Request
     """
@@ -224,7 +228,7 @@ def imagesearch_genappbuilder() -> str:
         results, _, request_url, raw_request, raw_response = search_enterprise_search(
             project_id=PROJECT_ID,
             location=LOCATION,
-            data_store_id=IMAGE_SEARCH_DATASTORE_IDs[0]["datastore_id"],
+            engine_id=IMAGE_SEARCH_ENGINE_IDs[0]["engine_id"],
             search_query=search_query,
             image_bytes=image_bytes,
             params={"search_type": 1},
@@ -262,8 +266,8 @@ def recommend() -> str:
     )
 
 
-@app.route("/recommend_genappbuilder", methods=["POST"])
-def recommend_genappbuilder() -> str:
+@app.route("/recommend_vais", methods=["POST"])
+def recommend_vais() -> str:
     """
     Handle Recommend Vertex AI Search Request
     """
@@ -372,7 +376,7 @@ def handle_exception(ex: Exception):
     """
     Handle Application Exceptions
     """
-    message_error = "An Unknown Error Occured"
+    message_error = "An Unknown Error Occurred"
 
     # Pass through HTTP errors
     if isinstance(ex, HTTPException):
@@ -387,6 +391,8 @@ def handle_exception(ex: Exception):
         title=NAV_LINKS[1]["name"],
         form_options=FORM_OPTIONS,
         nav_links=NAV_LINKS,
+        search_engines=CUSTOM_UI_SEARCH_ENGINES,
+        summary_models=SUMMARY_MODELS,
         message_error=message_error,
     )
 

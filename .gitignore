@@ -1,7 +1,12 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+*.pyc
 *$py.class
+**/dist
+/tmp
+/out-tsc
+/bazel-out
 
 # C extensions
 *.so
@@ -105,6 +110,7 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.venv*
 env/
 venv/
 ENV/
@@ -121,6 +127,9 @@ venv.bak/
 # mkdocs documentation
 /site
 
+# ruff cache
+.ruff_cache/
+
 # mypy
 .mypy_cache/
 .dmypy.json
@@ -129,7 +138,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# MacOS
+# macOS
 .DS_Store
 
 # PyCharm
@@ -138,3 +147,47 @@ dmypy.json
 # User-specific files
 language/examples/prompt-design/train.csv
 README-TOC*.md
+
+# Terraform
+terraform.tfstate**
+.terraform*
+.Terraform*
+
+tmp*
+
+# Node
+**/node_modules
+npm-debug.log
+yarn-error.log
+
+# IDEs and editors
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+
+# Miscellaneous
+**/.angular/*
+/.angular/cache
+.sass-cache/
+/connect.lock
+/coverage
+/libpeerconnection.log
+testem.log
+/typings
+
+# System files
+.DS_Store
+Thumbs.db
+*.vscode*
